@@ -5,6 +5,7 @@ import numpy as np
 from gym.utils import seeding
 import os
 import sys
+import json
 import logging
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if root_dir not in sys.path:
@@ -91,18 +92,22 @@ def cal_re(r, x):
     con.sort(reverse=True)
     return (-np.mean(con[:32]) - (wl-34000)*0.1)*0.2
 
-class Placememt():
-    def __init__(self, grid_size=32, num_cell=710):
+
+class Placement:
+    def __init__(self, netlist_dir, num_steps, grid_size=32):
+        with open(f'{netlist_dir}/info.json') as fp:
+            d = json.load(fp)
+        self.num_cell = d['num_cell']
         self.n = grid_size
-        self.steps = num_cell
+        self.steps = num_steps
         self.action_space = Discrete(self.n * self.n)
         self.obs_space = (1, 84, 84)
         self.obs = torch.zeros((1, 1, self.n, self.n))
         self.results = []
         self.best = -500
-        self.f = open("./result/result.txt", 'w+')
+        self.f = open(f"{netlist_dir}/result.txt", 'w+')
 
-        f = open("./data/n_edges_710.dat", "r")
+        f = open(f"{netlist_dir}/n_edges.dat", "r")
         for line in f:
             self.net = eval(line)
         self.seed()
@@ -146,5 +151,5 @@ class Placememt():
         return obs, done, torch.FloatTensor([[reward]])
 
 
-def place_envs():
-    return Placememt()
+def place_envs(netlist_dir, num_steps):
+    return Placement(netlist_dir, num_steps)

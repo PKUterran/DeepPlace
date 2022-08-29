@@ -165,6 +165,10 @@ def get_test_args():
     parser.add_argument(
         '--task', default='place', help='task for testing')
     parser.add_argument(
+        '--netlist-dir',
+        default='full_data/ispd2015/mgc_des_perf_1',
+        help='netlist data for testing')
+    parser.add_argument(
         '--num-steps',
         type=int,
         default=5,

@@ -1,6 +1,7 @@
 import copy
 import glob
 import os
+import json
 import time
 from collections import deque
 
@@ -37,23 +38,25 @@ def main():
     torch.set_num_threads(1)
     device = torch.device("cuda:0" if args.cuda else "cpu")
 
-    if args.task == 'place':
-        envs = place_envs()
-        actor_critic = torch.load("./trained_models/placement_300.pt")[0]
-        actor_critic.to(device)
+    with open(f'{args.netlist_dir}/info.json') as fp:
+        d = json.load(fp)
+    num_steps = d['num_cell'] if args.num_steps < 0 else args.num_steps
+    envs = place_envs(args.netlist_dir, num_steps)
+    actor_critic = torch.load("./trained_models/placement_300.pt")[0]
+    actor_critic.to(device)
 
-    agent = algo.PPO(
-            actor_critic,
-            args.clip_param,
-            args.ppo_epoch,
-            args.num_mini_batch,
-            args.value_loss_coef,
-            args.entropy_coef,
-            lr=args.lr,
-            eps=args.eps,
-            max_grad_norm=args.max_grad_norm)
+    # agent = algo.PPO(
+    #         actor_critic,
+    #         args.clip_param,
+    #         args.ppo_epoch,
+    #         args.num_mini_batch,
+    #         args.value_loss_coef,
+    #         args.entropy_coef,
+    #         lr=args.lr,
+    #         eps=args.eps,
+    #         max_grad_norm=args.max_grad_norm)
 
-    rollouts = RolloutStorage(args.num_steps, args.num_processes,
+    rollouts = RolloutStorage(num_steps, args.num_processes,
                               envs.obs_space, envs.action_space,
                               actor_critic.recurrent_hidden_state_size)
     obs = envs.reset()
@@ -63,7 +66,7 @@ def main():
 
     features = torch.zeros(710, 2)
 
-    for step in range(args.num_steps):
+    for step in range(num_steps):
         # Sample actions
         n = len(envs.results)
         with torch.no_grad():
