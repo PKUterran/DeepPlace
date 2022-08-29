@@ -100,7 +100,7 @@ class Placememt():
         self.obs = torch.zeros((1, 1, self.n, self.n))
         self.results = []
         self.best = -500
-        self.f = open("./result/result.txt", 'w')
+        self.f = open("./result/result.txt", 'w+')
 
         f = open("./data/n_edges_710.dat", "r")
         for line in f:
