@@ -1,1 +1,1 @@
-python validation.py --task "place" --netlist-dir full_data/ispd2015/mgc_des_perf_1 --num-processes 1 --num-mini-batch 1 --num-steps -1 --lr 2.5e-4 --clip-param 0.1 --value-loss-coef 0.5 --entropy-coef 0.01
+python validation.py --task "place" --netlist-dir full_data/ispd2015/mgc_des_perf_1 --num-steps -1 --num-cell 710 --num-processes 1 --num-mini-batch 1 --lr 2.5e-4 --clip-param 0.1 --value-loss-coef 0.5 --entropy-coef 0.01

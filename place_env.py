@@ -78,11 +78,17 @@ def cal_re(r, x):
         right = 0
         up = 31
         down = 0
+        flag = False
         for i in net:
+            if i >= len(r):
+                continue
+            flag = True
             left = min(left, r[i][1])
             right = max(right, r[i][1])
             up = min(up, r[i][0])
             down = max(down, r[i][0])
+        if not flag:
+            continue
         wn = int(right-left+1)
         hn = int(down-up+1)
         dn = (wn+hn) / (wn*hn)
