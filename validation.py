@@ -18,6 +18,8 @@ from a2c_ppo_acktr.arguments import get_test_args
 from a2c_ppo_acktr.storage import RolloutStorage
 from evaluation import evaluate
 from place_env import place_envs
+import warnings
+warnings.filterwarnings('ignore')
 
 
 def main():
@@ -40,8 +42,9 @@ def main():
 
     with open(f'{args.netlist_dir}/info.json') as fp:
         d = json.load(fp)
-    num_steps = d['num_cell'] if args.num_steps < 0 else args.num_steps
-    envs = place_envs(args.netlist_dir, num_steps)
+    num_cell = d['num_cell']
+    num_steps = max(num_cell * 5, args.num_steps)
+    envs = place_envs(args.netlist_dir)
     actor_critic = torch.load("./trained_models/placement_300.pt")[0]
     actor_critic.to(device)
 
@@ -64,7 +67,7 @@ def main():
     rollouts.to(device)
     episode_rewards = deque(maxlen=10)
 
-    features = torch.zeros(710, 2)
+    features = torch.zeros(num_cell, 2)
 
     for step in range(num_steps):
         # Sample actions
@@ -81,7 +84,7 @@ def main():
 
         if done:
             obs = envs.reset()
-            features = torch.zeros(710, 2)
+            features = torch.zeros(num_cell, 2)
             print(reward)
 
 

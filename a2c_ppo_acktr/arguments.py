@@ -174,6 +174,11 @@ def get_test_args():
         default=5,
         help='number of forward steps in A2C (default: 5)')
     parser.add_argument(
+        '--grid-size',
+        type=int,
+        default=32,
+        help='number of grid in axis x/y')
+    parser.add_argument(
         '--num-processes',
         type=int,
         default=16,
