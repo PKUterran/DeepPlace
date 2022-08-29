@@ -169,6 +169,11 @@ def get_test_args():
         default='full_data/ispd2015/mgc_des_perf_1',
         help='netlist data for testing')
     parser.add_argument(
+        '--num-cell',
+        type=int,
+        default=710,
+        help='number of considered cells')
+    parser.add_argument(
         '--num-steps',
         type=int,
         default=5,

@@ -5,6 +5,7 @@ import json
 import time
 from collections import deque
 
+import tqdm
 import gym
 import numpy as np
 import torch
@@ -42,22 +43,11 @@ def main():
 
     with open(f'{args.netlist_dir}/info.json') as fp:
         d = json.load(fp)
-    num_cell = d['num_cell']
+    num_cell = d['num_cell'] if args.num_cell < 0 else args.num_cell
     num_steps = max(num_cell * 5, args.num_steps)
-    envs = place_envs(args.netlist_dir)
+    envs = place_envs(args.netlist_dir, num_cell, args.grid_size)
     actor_critic = torch.load("./trained_models/placement_300.pt")[0]
     actor_critic.to(device)
-
-    # agent = algo.PPO(
-    #         actor_critic,
-    #         args.clip_param,
-    #         args.ppo_epoch,
-    #         args.num_mini_batch,
-    #         args.value_loss_coef,
-    #         args.entropy_coef,
-    #         lr=args.lr,
-    #         eps=args.eps,
-    #         max_grad_norm=args.max_grad_norm)
 
     rollouts = RolloutStorage(num_steps, args.num_processes,
                               envs.obs_space, envs.action_space,
@@ -69,7 +59,7 @@ def main():
 
     features = torch.zeros(num_cell, 2)
 
-    for step in range(num_steps):
+    for step in tqdm.tqdm(range(num_steps), total=num_steps):
         # Sample actions
         n = len(envs.results)
         with torch.no_grad():

@@ -94,12 +94,12 @@ def cal_re(r, x):
 
 
 class Placement:
-    def __init__(self, netlist_dir, grid_size=32):
+    def __init__(self, netlist_dir, num_steps, grid_size):
         with open(f'{netlist_dir}/info.json') as fp:
             d = json.load(fp)
         self.num_cell = d['num_cell']
         self.n = grid_size
-        self.steps = self.num_cell
+        self.steps = num_steps
         self.action_space = Discrete(self.n * self.n)
         self.obs_space = (1, 84, 84)
         self.obs = torch.zeros((1, 1, self.n, self.n))
@@ -151,5 +151,5 @@ class Placement:
         return obs, done, torch.FloatTensor([[reward]])
 
 
-def place_envs(netlist_dir):
-    return Placement(netlist_dir)
+def place_envs(netlist_dir, num_steps, grid_size):
+    return Placement(netlist_dir, num_steps, grid_size)
