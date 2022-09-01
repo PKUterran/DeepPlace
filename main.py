@@ -43,9 +43,10 @@ def main():
 
     if args.task == 'place':
         envs = place_envs()
-    
     elif args.task == 'fullplace':
         envs = fullplace_envs()
+    else:
+        assert False, f'{args.task}'
 
     actor_critic = Policy(
         envs.obs_space,
@@ -77,6 +78,8 @@ def main():
     elif args.algo == 'acktr':
         agent = algo.A2C_ACKTR(
             actor_critic, args.value_loss_coef, args.entropy_coef, acktr=True)
+    else:
+        assert False, f'{args.algo}'
 
     if args.gail:
         assert len(envs.obs_space) == 1
@@ -126,7 +129,7 @@ def main():
             with torch.no_grad():
                 value, action, action_log_prob, recurrent_hidden_states = actor_critic.act(
                     rollouts.obs[step], rollouts.recurrent_hidden_states[step],
-                    rollouts.masks[step], features, n)
+                    rollouts.masks[step], features, n, envs.g)
 
             # Obser reward and next obs
             obs, done, reward = envs.step(action)
@@ -147,7 +150,7 @@ def main():
         with torch.no_grad():
             next_value = actor_critic.get_value(
                 rollouts.obs[-1], rollouts.recurrent_hidden_states[-1],
-                rollouts.masks[-1], features, n).detach()
+                rollouts.masks[-1], features, n, envs.g).detach()
 
         if args.gail:
             if j >= 10:

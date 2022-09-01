@@ -13,25 +13,6 @@ gcn_msg = fn.copy_u(u='h', out='m')
 gcn_reduce = fn.sum(msg='m', out='h')
 
 
-def build_graph():
-    path1 = dirname(dirname(abspath(__file__))) + '/data/edges_1.dat'
-    path2 = dirname(dirname(abspath(__file__))) + '/data/edges_2.dat'
-    f = open(path1, "r")
-    for line in f:
-        x1 = eval(line)
-
-    f1 = open(path2, "r")
-    for line in f1:
-        x2 = eval(line)
-    g = dgl.DGLGraph()
-    g.add_nodes(710)
-    g.add_edges(x1, x2)
-    # edges are directional in DGL; make them bi-directional
-    g.add_edges(x2, x1)
-
-    return g
-
-
 class GCNLayer(nn.Module):
     def __init__(self, in_feats, out_feats):
         super(GCNLayer, self).__init__()
@@ -92,8 +73,8 @@ class Policy(nn.Module):
     def forward(self, inputs, rnn_hxs, masks):
         raise NotImplementedError
 
-    def act(self, inputs, rnn_hxs, masks, features, n, deterministic=False):
-        value, actor_features, rnn_hxs = self.base(inputs, rnn_hxs, masks, features, n)
+    def act(self, inputs, rnn_hxs, masks, features, n, g: dgl.DGLGraph, deterministic=False):
+        value, actor_features, rnn_hxs = self.base(inputs, rnn_hxs, masks, features, n, g)
         dist = self.dist(actor_features)
 
         if deterministic:
@@ -106,13 +87,13 @@ class Policy(nn.Module):
 
         return value, action, action_log_probs, rnn_hxs
 
-    def get_value(self, inputs, rnn_hxs, masks, features, n):
-        value, _, _ = self.base(inputs, rnn_hxs, masks, features, n)
+    def get_value(self, inputs, rnn_hxs, masks, features, n, g: dgl.DGLGraph):
+        value, _, _ = self.base(inputs, rnn_hxs, masks, features, n, g)
         return value
 
-    def evaluate_actions(self, inputs, rnn_hxs, masks, action, features):
-        n = 709
-        value, actor_features, rnn_hxs = self.base(inputs, rnn_hxs, masks, features, n, False)
+    def evaluate_actions(self, inputs, rnn_hxs, masks, action, features, g: dgl.DGLGraph):
+        n = g.num_nodes() - 1
+        value, actor_features, rnn_hxs = self.base(inputs, rnn_hxs, masks, features, n, g, False)
         dist = self.dist(actor_features)
 
         action_log_probs = dist.log_probs(action)
@@ -227,20 +208,19 @@ class CNNBase(NNBase):
         self.critic_linear = init_(nn.Linear(hidden_size, 1))
 
         self.train()
-        self.g = build_graph().to('cuda:0')
         self.layer1 = GCNLayer(2, 16)
         self.layer2 = GCNLayer(16, 32)
         self.layer4 = GCNLayer(32, 16)
 
-    def forward(self, inputs, rnn_hxs, masks, features, n, flag=True):
+    def forward(self, inputs, rnn_hxs, masks, features, n, g: dgl.DGLGraph, flag=True):
         x = self.main(inputs / 255.0)
         features = features.cuda()
-        x1 = F.relu(self.layer1(self.g, features))
-        x2 = F.relu(self.layer2(self.g, x1))
+        x1 = F.relu(self.layer1(g, features))
+        x2 = F.relu(self.layer2(g, x1))
         if flag:
-            x4 = F.relu(self.layer4(self.g, x2))[n].unsqueeze(0)
+            x4 = F.relu(self.layer4(g, x2))[n].unsqueeze(0)
         else:
-            x4 = F.relu(self.layer4(self.g, x2))
+            x4 = F.relu(self.layer4(g, x2))
         x = torch.cat([x, x4], 1)
 
         if self.is_recurrent:

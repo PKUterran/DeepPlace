@@ -171,7 +171,7 @@ def get_test_args():
     parser.add_argument(
         '--num-cell',
         type=int,
-        default=710,
+        default=-1,
         help='number of considered cells')
     parser.add_argument(
         '--num-steps',

@@ -2,6 +2,7 @@ from gym.spaces import Discrete
 import torch
 import torch.nn as nn
 import numpy as np
+import dgl
 from gym.utils import seeding
 import os
 import sys
@@ -99,11 +100,27 @@ def cal_re(r, x):
     return (-np.mean(con[:32]) - (wl-34000)*0.1)*0.2
 
 
+def build_graph(netlist_dir, num_cell, bidirectional=True):
+    with open(f'{netlist_dir}/edges_1.dat') as fp:
+        x1 = json.load(fp)
+    with open(f'{netlist_dir}/edges_2.dat') as fp:
+        x2 = json.load(fp)
+    g = dgl.DGLGraph()
+    g.add_nodes(num_cell)
+    g.add_edges(x1, x2)
+    if not bidirectional:
+        # edges are directional in DGL; make them bi-directional
+        g.add_edges(x2, x1)
+
+    return g
+
+
 class Placement:
     def __init__(self, netlist_dir, num_steps, grid_size):
         with open(f'{netlist_dir}/info.json') as fp:
             d = json.load(fp)
         self.num_cell = d['num_cell']
+        self.g = build_graph(netlist_dir, self.num_cell)
         self.n = grid_size
         self.steps = num_steps
         self.action_space = Discrete(self.n * self.n)
